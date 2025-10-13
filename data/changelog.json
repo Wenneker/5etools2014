@@ -715,7 +715,7 @@
 	{
 		"ver": "1.91.1",
 		"date": "2019-12-01",
-		"txt": "- Added missing Rick and Morty pregen character PDFs\n- (Fixed typos/added tags)"
+		"txt": "- Added missing Rick and Morty pregenerated character PDFs\n- (Fixed typos/added tags)"
 	},
 	{
 		"ver": "1.91.2",
@@ -1530,7 +1530,7 @@
 	{
 		"ver": "1.121.1",
 		"date": "2021-01-28",
-		"txt": "- Added more allergen information to Recipes filters (thanks @ revilowaldow)\n- Fixed Classes page \"Display Class if Any Subclass is Visible\" filter incorrectly overriding Source filter in some cases \n- Fixed Recipes page Serves filter failing to populate, thus force-hiding some recipes\n- (Homebrew) Improved performance of Homebrew Builder for large number of entities\n- (Fixed typos/added tags)"
+		"txt": "- Added more allergen information to Recipes filters (thanks @ Lyra)\n- Fixed Classes page \"Display Class if Any Subclass is Visible\" filter incorrectly overriding Source filter in some cases \n- Fixed Recipes page Serves filter failing to populate, thus force-hiding some recipes\n- (Homebrew) Improved performance of Homebrew Builder for large number of entities\n- (Fixed typos/added tags)"
 	},
 	{
 		"ver": "1.121.2",
@@ -1732,7 +1732,7 @@
 		"ver": "1.132.0",
 		"date": "2021-07-11",
 		"title": "All The Way Down",
-		"txt": "- Overhauled The Tortle Package adventure content (thanks @ revilowaldow)\n- Added \"Recharge Type\" filter to Items page\n- (Brew) Added support for subraces of non-base key races (e.g. Half-Orc)\n- (Brew) Added support for `item` `_copy`s\n- (Brew) Fixed Creature Homebrew Builder failing to handle \"each rest\" spells\n- (Fixed typos/added tags)"
+		"txt": "- Overhauled The Tortle Package adventure content (thanks @ Lyra)\n- Added \"Recharge Type\" filter to Items page\n- (Brew) Added support for subraces of non-base key races (e.g. Half-Orc)\n- (Brew) Added support for `item` `_copy`s\n- (Brew) Fixed Creature Homebrew Builder failing to handle \"each rest\" spells\n- (Fixed typos/added tags)"
 	},
 	{
 		"ver": "1.132.1",
@@ -2994,5 +2994,30 @@
 		"ver": "1.210.48",
 		"date": "2025-08-15",
 		"txt": "- Added ALT+scroll to hover links to scroll preview content\n- (Brew) Fixed crash when saving current homebrew list to URL\n- (Fixed typos/added tags)"
+	},
+	{
+		"ver": "1.210.49",
+		"date": "2025-09-07",
+		"txt": "- Added expanded range to Items page \"Cost\" filter, with 200 GP to 100,000 GP increments\n- Added \"Show Duplicates\" option to Items page Printer View, to support printing multiple handouts when more than one item of a given type is added to a list\n- Fixed DM Screen Initiative Tracker failing to connect\n- Fixed Markdown rendering of tables on the Tables Page\n- Fixed creature CR sliders on mobile\n- (Brew) Added `color` support to `psionicTypes`\n- (Fixed typos/added tags)"
+	},
+	{
+		"ver": "1.210.50",
+		"date": "2025-09-09",
+		"txt": "- Fixed DM Screen crash when pinning Dice Roller\n- (Brew) Relaxed `summonedBySpell` requirement for creature summon spell level scaling"
+	},
+	{
+		"ver": "1.210.51",
+		"date": "2025-09-17",
+		"txt": "- Fixed creature Markdown rendering of non-\"trait\" spellcasting\n- (Brew) Added list of updated homebrews to Homebrew Manager \"Update All\" notification (and made the notification persistent)\n- (Brew) Added support for scaling hit dice when scaling creature by Spell Level\n- (Fixed typos/added tags)"
+	},
+	{
+		"ver": "1.210.52",
+		"date": "2025-10-04",
+		"txt": "- Added \"Dice Roller Position\" setting to Preferences\n- Clicking a hoverable fake-link (e.g. when searching \"Tremorsense\" in Omnisearch) now opens a pinned window, allowing the result to be viewed on mobile\n- The Optional Feature \"Feature Prerequisite\" filter now includes optional feature prerequisites\n- Added per-mode speed filters to Bestiary\n- Fixed Dynamic Map Viewer \"Zoom to Fit\" failing when popped out into separate browser window\n- Fixed Statgen \"Copy to Link\" failing to retain much of the available state\n- Fixed Statgen \"Load from File\"/load from URL resetting nested sections\n- Fixed rare Statgen crash when using \"Reset All\" after selecting an ability-increasing feat via Ability Score Increases\n- (Brew) Added \"Display As\"/\"Hidden\" support to spellcasting in Creature Homebrew Builder\n- (Brew) Added \"Open Page\" support for homebrew. Note that these pages will not appear in a sitemap nor have previewable embeds, but will auto-load the appropriate homebrew when visited.\n- (Brew) Improved Race Text Converter handling of creature type/size/speed\n- (Fixed typos/added tags)"
+	},
+	{
+		"ver": "1.210.53",
+		"date": "2025-10-08",
+		"txt": "- (Brew) Added automatic page reload to the Homebrew Manager (and Prerelease Content Manager), to ease finding content via Omnisearch/the Navbar after load\n- (Fixed typos/added tags)"
 	}
 ]

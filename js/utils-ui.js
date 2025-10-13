@@ -76,8 +76,21 @@ function MixinProxyBase (Cls) {
 			});
 		}
 
+		_isEqualSimple (a, b) {
+			if (Object.is(a, b)) return true;
+
+			if (!a || !b) return false;
+
+			const isArrayA = Array.isArray(a);
+			const isArrayB = Array.isArray(b);
+			if (isArrayA !== isArrayB) return false;
+			if (isArrayA) return a.length === 0 && b.length === 0;
+
+			return false;
+		}
+
 		_doProxySet (hookProp, object, prop, value) {
-			if (object[prop] === value) return true;
+			if (this._isEqualSimple(object[prop], value)) return true;
 			const prevValue = object[prop];
 			Reflect.set(object, prop, value);
 			this._doFireHooksAll(hookProp, prop, value, prevValue);
@@ -87,7 +100,7 @@ function MixinProxyBase (Cls) {
 
 		/** As per `_doProxySet`, but the hooks are run strictly in serial. */
 		async _pDoProxySet (hookProp, object, prop, value) {
-			if (object[prop] === value) return true;
+			if (this._isEqualSimple(object[prop], value)) return true;
 			const prevValue = object[prop];
 			Reflect.set(object, prop, value);
 			if (this.__hooksAll[hookProp]) for (const hook of this.__hooksAll[hookProp]) await hook(prop, value, prevValue);
@@ -347,6 +360,7 @@ class UiUtil {
 	 *
 	 * @param {function} [opts.cbClose] Callback run when the modal is closed.
 	 * @param {jQuery} [opts.$titleSplit] Element to have split alongside the title.
+	 * @param {HTMLElement} [opts.eleTitleSplit] Element to have split alongside the title.
 	 * @param {int} [opts.zIndex] Z-index of the modal.
 	 * @param {number} [opts.overlayColor] Overlay color.
 	 * @param {boolean} [opts.isPermanent] If the modal should be impossible to close.
@@ -361,6 +375,9 @@ class UiUtil {
 		opts = opts || {};
 
 		const doc = (opts.window || window).document;
+
+		if (opts.$titleSplit && opts.eleTitleSplit) throw new Error(`Only one of "$titleSplit" and "eleTitleSplit" may be specified!`);
+		const eleTitleSplit = opts.eleTitleSplit || opts.$titleSplit?.[0];
 
 		UiUtil._initModalEscapeHandler({doc});
 		UiUtil._initModalMouseupHandlers({doc});
@@ -452,7 +469,7 @@ class UiUtil {
 								})
 								: null,
 
-							opts.$titleSplit ? opts.$titleSplit[0] : null,
+							eleTitleSplit,
 
 							btnCloseModal,
 						].filter(Boolean),
@@ -1486,7 +1503,7 @@ class TabUiUtil extends TabUiUtilBase {
 		obj.__renderTypedTabMeta_buttons = function ({tabMeta, ixTab, isStacked = false}) {
 			const $btns = tabMeta.buttons.map((meta, j) => {
 				const $btn = $(`<button class="ve-btn ui-tab__btn-tab-head ${isStacked ? `ui-tab__btn-tab-head--stacked` : ""} pt-2p px-4p pb-0 bbr-0 bbl-0 ${meta.type ? `ve-btn-${meta.type}` : "ve-btn-primary"}" ${meta.title ? `title="${meta.title.qq()}"` : ""}>${meta.html}</button>`)
-					.click(evt => meta.pFnClick(evt, $btn));
+					.on("click", evt => meta.pFnClick({evt, $btn, btn: $btn[0]}));
 				return $btn;
 			});
 
@@ -1552,7 +1569,7 @@ class TabUiUtilSide extends TabUiUtilBase {
 		obj.__renderTypedTabMeta_buttons = function ({tabMeta, ixTab}) {
 			const $btns = tabMeta.buttons.map((meta, j) => {
 				const $btn = $(`<button class="ve-btn ${meta.type ? `ve-btn-${meta.type}` : "ve-btn-primary"} ve-btn-sm" ${meta.title ? `title="${meta.title.qq()}"` : ""}>${meta.html}</button>`)
-					.click(evt => meta.pFnClick(evt, $btn));
+					.on("click", evt => meta.pFnClick({evt, $btn, btn: $btn[0]}));
 
 				if (j === tabMeta.buttons.length - 1) $btn.addClass(`br-0 btr-0 bbr-0`);
 
@@ -2500,29 +2517,41 @@ class InputUiUtil {
 		return UiUtil.getShowModal(getShowModalOpts);
 	}
 
-	static _$getBtnOk ({comp = null, opts, doClose}) {
-		return $(`<button class="ve-btn ve-btn-primary mr-2">${opts.buttonText || "OK"}</button>`)
-			.click(evt => {
+	static _getBtnOk ({comp = null, opts, doClose}) {
+		return ee`<button class="ve-btn ve-btn-primary mr-2">${opts.buttonText || "OK"}</button>`
+			.onn("click", evt => {
 				evt.stopPropagation();
 				if (comp && !comp._state.isValid) return JqueryUtil.doToast({content: `Please enter valid input!`, type: "warning"});
 				doClose(true);
 			});
 	}
 
-	static _$getBtnCancel ({comp = null, opts, doClose}) {
-		return $(`<button class="ve-btn ve-btn-default">Cancel</button>`)
-			.click(evt => {
+	static _getBtnCancel ({comp = null, opts, doClose}) {
+		return ee`<button class="ve-btn ve-btn-default">Cancel</button>`
+			.onn("click", evt => {
 				evt.stopPropagation();
 				doClose(false);
 			});
 	}
 
-	static _$getBtnSkip ({comp = null, opts, doClose}) {
-		return !opts.isSkippable ? null : $(`<button class="ve-btn ve-btn-default ml-3">Skip</button>`)
-			.click(evt => {
+	static _getBtnSkip ({comp = null, opts, doClose}) {
+		return !opts.isSkippable ? null : ee`<button class="ve-btn ve-btn-default ml-3">Skip</button>`
+			.onn("click", evt => {
 				evt.stopPropagation();
 				doClose(VeCt.SYM_UI_SKIP);
 			});
+	}
+
+	static _$getBtnOk ({comp = null, opts, doClose}) {
+		return $(this._getBtnOk({comp, opts, doClose}));
+	}
+
+	static _$getBtnCancel ({comp = null, opts, doClose}) {
+		return $(this._getBtnCancel({comp, opts, doClose}));
+	}
+
+	static _$getBtnSkip ({comp = null, opts, doClose}) {
+		return $(this._getBtnSkip({comp, opts, doClose}));
 	}
 
 	/* -------------------------------------------- */
@@ -2717,6 +2746,8 @@ class InputUiUtil {
 	 * @param opts.int If the value returned should be an integer.
 	 * @param opts.title Prompt title.
 	 * @param opts.default Default value.
+	 * @param [opts.elePre] Element to add before the number input.
+	 * @param [opts.elePost] Element to add after the number input.
 	 * @param [opts.$elePre] Element to add before the number input.
 	 * @param [opts.$elePost] Element to add after the number input.
 	 * @param [opts.isPermanent] If the prompt can only be closed by entering a number.
@@ -2728,15 +2759,20 @@ class InputUiUtil {
 	static async pGetUserNumber (opts) {
 		opts = opts || {};
 
+		if (opts.elePre && opts.$elePre) throw new Error(`Only one of "elePre" and "$elePre" may be specified!`);
+		if (opts.elePost && opts.$elePost) throw new Error(`Only one of "elePost" and "$elePost" may be specified!`);
+		opts.elePre ??= opts.$elePre?.[0];
+		opts.elePost ??= opts.$elePost?.[0];
+
 		let defaultVal = opts.default !== undefined ? opts.default : null;
 		if (opts.storageKey_default) {
 			const prev = await (opts.isGlobal_default ? StorageUtil.pGet(opts.storageKey_default) : StorageUtil.pGetForPage(opts.storageKey_default));
 			if (prev != null) defaultVal = prev;
 		}
 
-		const $iptNumber = $(`<input class="form-control mb-2 ve-text-right" ${opts.min ? `min="${opts.min}"` : ""} ${opts.max ? `max="${opts.max}"` : ""}>`)
-			.keydown(evt => {
-				if (evt.key === "Escape") { $iptNumber.blur(); return; }
+		const iptNumber = ee`<input class="form-control mb-2 ve-text-right" ${opts.min ? `min="${opts.min}"` : ""} ${opts.max ? `max="${opts.max}"` : ""}>`
+			.onn("keydown", evt => {
+				if (evt.key === "Escape") { iptNumber.blure(); return; }
 
 				evt.stopPropagation();
 				if (evt.key === "Enter") {
@@ -2744,26 +2780,26 @@ class InputUiUtil {
 					doClose(true);
 				}
 			});
-		if (defaultVal !== undefined) $iptNumber.val(defaultVal);
+		if (defaultVal !== undefined) iptNumber.val(defaultVal);
 
-		const {$modalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
 			title: opts.title || "Enter a Number",
 			isMinHeight0: true,
 		});
 
-		const $btnOk = this._$getBtnOk({opts, doClose});
-		const $btnCancel = this._$getBtnCancel({opts, doClose});
-		const $btnSkip = this._$getBtnSkip({opts, doClose});
+		const btnOk = this._getBtnOk({opts, doClose});
+		const btnCancel = this._getBtnCancel({opts, doClose});
+		const btnSkip = this._getBtnSkip({opts, doClose});
 
-		if (opts.$elePre) opts.$elePre.appendTo($modalInner);
-		$iptNumber.appendTo($modalInner);
-		if (opts.$elePost) opts.$elePost.appendTo($modalInner);
-		$$`<div class="ve-flex-v-center ve-flex-h-right pb-1 px-1">${$btnOk}${$btnCancel}${$btnSkip}</div>`.appendTo($modalInner);
+		if (opts.elePre) eleModalInner.appends(opts.elePre);
+		eleModalInner.appends(iptNumber);
+		if (opts.elePost) eleModalInner.appends(opts.elePost);
+		ee`<div class="ve-flex-v-center ve-flex-h-right pb-1 px-1">${btnOk}${btnCancel}${btnSkip}</div>`.appendTo(eleModalInner);
 
 		if (doAutoResizeModal) doAutoResizeModal();
 
-		$iptNumber.focus();
-		$iptNumber.select();
+		iptNumber.focuse();
+		iptNumber.selecte();
 
 		// region Output
 		const [isDataEntered] = await pGetResolved();
@@ -2771,7 +2807,7 @@ class InputUiUtil {
 		if (typeof isDataEntered === "symbol") return isDataEntered;
 
 		if (!isDataEntered) return null;
-		const outRaw = $iptNumber.val();
+		const outRaw = iptNumber.val();
 		if (!outRaw.trim()) return null;
 		let out = UiUtil.strToNumber(outRaw);
 		if (opts.min) out = Math.max(opts.min, out);
@@ -4015,7 +4051,7 @@ function MixinBaseComponent (Cls) {
 					if (meta == null) continue;
 
 					meta.data = it; // update any existing pointers
-					if (!meta.$wrpRow && !meta.fnRemoveEles) throw new Error(`A "$wrpRow" or a "fnRemoveEles" property is required for deletes!`);
+					if (!meta.wrpRow && !meta.$wrpRow && !meta.fnRemoveEles) throw new Error(`A "wrpRow", "$wrpRow", or a "fnRemoveEles" property is required for deletes!`);
 
 					if (opts.isDiffMode) meta.__hash = this._getCollectionEntityHash(it);
 
@@ -4024,6 +4060,7 @@ function MixinBaseComponent (Cls) {
 			}
 
 			const doRemoveElements = meta => {
+				if (meta.wrpRow) meta.wrpRow.remove();
 				if (meta.$wrpRow) meta.$wrpRow.remove();
 				if (meta.fnRemoveEles) meta.fnRemoveEles();
 			};
@@ -4096,8 +4133,8 @@ function MixinBaseComponent (Cls) {
 					// If the "get new" function returns null, skip rendering this entity
 					if (meta == null) continue;
 
-					if (!opts.isMultiRender && !meta.$wrpRow && !meta.fnRemoveEles) throw new Error(`A "$wrpRow" or a "fnRemoveEles" property is required for deletes!`);
-					if (opts.isMultiRender && meta.some(it => !it.$wrpRow && !it.fnRemoveEles)) throw new Error(`A "$wrpRow" or a "fnRemoveEles" property is required for deletes!`);
+					if (!opts.isMultiRender && !meta.wrpRow && !meta.$wrpRow && !meta.fnRemoveEles) throw new Error(`A "wrpRow", "$wrpRow", or a "fnRemoveEles" property is required for deletes!`);
+					if (opts.isMultiRender && meta.some(it => !it.wrpRow && !it.$wrpRow && !it.fnRemoveEles)) throw new Error(`A "wrpRow", "$wrpRow", or a "fnRemoveEles" property is required for deletes!`);
 
 					if (opts.isDiffMode) meta.__hash = this._getCollectionEntityHash(it);
 
@@ -4106,6 +4143,7 @@ function MixinBaseComponent (Cls) {
 			}
 
 			const doRemoveElements = meta => {
+				if (meta.wrpRow) meta.wrpRow.remove();
 				if (meta.$wrpRow) meta.$wrpRow.remove();
 				if (meta.fnRemoveEles) meta.fnRemoveEles();
 			};
@@ -4136,7 +4174,7 @@ function MixinBaseComponent (Cls) {
 		_detachCollection (prop, namespace = null) {
 			const renderedLookupProp = namespace ? `${namespace}.${prop}` : prop;
 			const rendered = (this.__rendered[renderedLookupProp] = this.__rendered[renderedLookupProp] || {});
-			Object.values(rendered).forEach(it => it.$wrpRow.detach());
+			Object.values(rendered).forEach(it => (it.wrpRow || it.$wrpRow).detach());
 		}
 
 		/**
@@ -4148,7 +4186,7 @@ function MixinBaseComponent (Cls) {
 		_resetCollectionRenders (prop, namespace = null) {
 			const renderedLookupProp = namespace ? `${namespace}.${prop}` : prop;
 			const rendered = (this.__rendered[renderedLookupProp] = this.__rendered[renderedLookupProp] || {});
-			Object.values(rendered).forEach(it => it.$wrpRow.remove());
+			Object.values(rendered).forEach(it => (it.wrpRow || it.$wrpRow).remove());
 			delete this.__rendered[renderedLookupProp];
 		}
 
@@ -4287,10 +4325,12 @@ class RenderableCollectionBase {
 globalThis.RenderableCollectionBase = RenderableCollectionBase;
 
 class _RenderableCollectionGenericRowsSyncAsyncUtils {
-	constructor ({comp, prop, $wrpRows, namespace}) {
+	constructor ({comp, prop, wrpRows, $wrpRows, namespace}) {
 		this._comp = comp;
 		this._prop = prop;
-		this._$wrpRows = $wrpRows;
+		// TODO(jquery) migrate
+		if (wrpRows && $wrpRows) throw new Error(`Only one of "wrpRows" and "$wrpRows" may be specified!`);
+		this._$wrpRows = $wrpRows || $(wrpRows);
 		this._namespace = namespace;
 	}
 
@@ -4392,12 +4432,12 @@ class RenderableCollectionGenericRows extends RenderableCollectionBase {
 	 */
 	constructor (comp, prop, $wrpRows, opts) {
 		super(comp, prop, opts);
-		this._$wrpRows = $wrpRows;
+		this._$wrpRows = $wrpRows instanceof $ ? $wrpRows : $($wrpRows);
 
 		this._utils = new _RenderableCollectionGenericRowsSyncAsyncUtils({
 			comp,
 			prop,
-			$wrpRows,
+			$wrpRows: this._$wrpRows,
 			namespace: opts?.namespace,
 		});
 	}
@@ -4415,13 +4455,15 @@ class RenderableCollectionGenericRows extends RenderableCollectionBase {
 
 		const $wrpRow = this._$getWrpRow()
 			.appendTo(this._$wrpRows);
+		const wrpRow = e_($wrpRow[0]);
 
-		const renderAdditional = this._populateRow({comp, $wrpRow, entity});
+		const renderAdditional = this._populateRow({comp, $wrpRow, wrpRow, entity});
 
 		return {
 			...(renderAdditional || {}),
 			id: entity.id,
 			comp,
+			wrpRow,
 			$wrpRow,
 		};
 	}
@@ -4438,7 +4480,7 @@ class RenderableCollectionGenericRows extends RenderableCollectionBase {
 	 * @abstract
 	 * @return {?object}
 	 */
-	_populateRow ({comp, $wrpRow, entity}) {
+	_populateRow ({comp, $wrpRow, wrpRow, entity}) {
 		throw new Error(`Unimplemented!`);
 	}
 }
@@ -4517,12 +4559,12 @@ class RenderableCollectionAsyncGenericRows extends RenderableCollectionAsyncBase
 	 */
 	constructor (comp, prop, $wrpRows, opts) {
 		super(comp, prop, opts);
-		this._$wrpRows = $wrpRows;
+		this._$wrpRows = $wrpRows instanceof $ ? $wrpRows : $($wrpRows);
 
 		this._utils = new _RenderableCollectionGenericRowsSyncAsyncUtils({
 			comp,
 			prop,
-			$wrpRows,
+			$wrpRows: this._$wrpRows,
 			namespace: opts?.namespace,
 		});
 	}
@@ -6621,6 +6663,7 @@ class ComponentUiUtil {
 				const displayValue = opts.fnDisplay ? opts.fnDisplay(v, ixValueFrozen) : v;
 
 				rowMetas.push({
+					cb: $cb[0],
 					$cb,
 					displayValue,
 					value: v,
@@ -6669,17 +6712,24 @@ class ComponentUiUtil {
 			hkSearch();
 		}
 
+		const $ele = $$`<div class="ve-flex-col w-100 ve-overflow-y-auto min-h-40p">${$eles}</div>`;
+
 		// Always return this as a "meta" object
 		const unhook = () => rowMetas.forEach(it => it.unhook());
 		return {
-			$ele: $$`<div class="ve-flex-col w-100 ve-overflow-y-auto min-h-40p">${$eles}</div>`,
+			ele: $ele[0],
+			$ele: $ele,
+			iptSearch: $iptSearch?.[0],
 			$iptSearch,
 			rowMetas, // Return this to allow for creating custom UI
 			propIsAcceptable,
 			propPulse,
 			unhook,
-			cleanup: () => {
+			cleanup: ({isRetainState = false} = {}) => {
 				unhook();
+
+				if (isRetainState) return;
+
 				// This will trigger a final "pulse"
 				Object.keys(comp._state)
 					.filter(it => it.startsWith(`${prop}__`))
@@ -6902,17 +6952,19 @@ ComponentUiUtil.RangeSlider = class {
 			].filter(Boolean),
 		});
 
+		const onDownWrpTrack = evt => {
+			const thumb = this._getClosestThumb(evt);
+			this._handleMouseDown(evt, thumb);
+		};
 		const wrpTrack = e_({
 			tag: "div",
 			clazz: `ve-flex-v-center w-100 h-100 ui-slidr__wrp-track clickable`,
-			mousedown: evt => {
-				const thumb = this._getClosestThumb(evt);
-				this._handleMouseDown(evt, thumb);
-			},
 			children: [
 				this._dispTrackOuter,
 			],
-		});
+		})
+			.onn("mousedown", evt => onDownWrpTrack(evt))
+			.onn("touchstart", evt => onDownWrpTrack(evt));
 
 		const wrpTop = e_({
 			tag: "div",
@@ -6926,14 +6978,16 @@ ComponentUiUtil.RangeSlider = class {
 		// endregion
 
 		// region Bottom part
+		const onDownWrpPips = evt => {
+			const thumb = this._getClosestThumb(evt);
+			this._handleMouseDown(evt, thumb);
+		};
 		const wrpPips = e_({
 			tag: "div",
 			clazz: `w-100 ve-flex relative clickable h-100 ui-slidr__wrp-pips`,
-			mousedown: evt => {
-				const thumb = this._getClosestThumb(evt);
-				this._handleMouseDown(evt, thumb);
-			},
-		});
+		})
+			.onn("mousedown", evt => onDownWrpPips(evt))
+			.onn("touchstart", evt => onDownWrpPips(evt));
 
 		const wrpBottom = e_({
 			tag: "div",
@@ -7028,7 +7082,7 @@ ComponentUiUtil.RangeSlider = class {
 
 		const wrp = e_({
 			tag: "div",
-			clazz: "ve-flex-col w-100 ui-slidr__wrp",
+			clazz: "ve-flex-col w-100 ui-slidr__wrp ve-touch-action-none",
 			children: [
 				wrpTop,
 				wrpBottom,
@@ -7046,7 +7100,7 @@ ComponentUiUtil.RangeSlider = class {
 	_getDispValue ({isVisible, side}) {
 		return e_({
 			tag: "div",
-			clazz: `ve-overflow-hidden ui-slidr__disp-value no-shrink no-grow ve-flex-vh-center bold no-select ${isVisible ? `ui-slidr__disp-value--visible` : ""} ui-slidr__disp-value--${side}`,
+			clazz: `ve-overflow-hidden ui-slidr__disp-value no-shrink no-grow no-wrap ve-flex-vh-center bold no-select ${isVisible ? `ui-slidr__disp-value--visible` : ""} ui-slidr__disp-value--${side}`,
 		});
 	}
 
@@ -7060,7 +7114,7 @@ ComponentUiUtil.RangeSlider = class {
 	_getThumb () {
 		const thumb = e_({
 			tag: "div",
-			clazz: "ui-slidr__thumb absolute clickable",
+			clazz: "ui-slidr__thumb absolute clickable ve-touch-action-none",
 			mousedown: evt => this._handleMouseDown(evt, thumb),
 		}).attr("draggable", true);
 
@@ -7239,17 +7293,24 @@ ComponentUiUtil.RangeSlider = class {
 
 	static _init () {
 		if (this._isInit) return;
-		document.addEventListener("mousemove", evt => {
+
+		const onMove = evt => {
 			for (const slider of this._ALL_SLIDERS) {
 				slider._handleMouseMove(evt);
 			}
-		});
+		};
 
-		document.addEventListener("mouseup", evt => {
+		const onUp = evt => {
 			for (const slider of this._ALL_SLIDERS) {
 				slider._handleMouseUp(evt);
 			}
-		});
+		};
+
+		document.addEventListener("mousemove", onMove);
+		document.addEventListener("touchmove", onMove);
+
+		document.addEventListener("mouseup", onUp);
+		document.addEventListener("touchend", onUp);
 	}
 };
 ComponentUiUtil.RangeSlider._isInit = false;

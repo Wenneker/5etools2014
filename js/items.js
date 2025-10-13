@@ -194,9 +194,11 @@ class ItemsPage extends ListPage {
 			dataProps: ["item"],
 
 			bookViewOptions: {
+				nameSingular: "item",
 				namePlural: "items",
 				pageTitle: "Items Book View",
 				propMarkdown: "item",
+				isSublistItemsCountable: true,
 			},
 
 			tableViewOptions: {
@@ -228,7 +230,7 @@ class ItemsPage extends ListPage {
 	get _bindOtherButtonsOptions () {
 		return {
 			other: [
-				this._bindOtherButtonsOptions_openAsSinglePage({slugPage: "items", fnGetHash: () => Hist.getHashParts()[0]}),
+				this._bindOtherButtonsOptions_openAsSinglePage({slugPage: "items"}),
 			].filter(Boolean),
 		};
 	}

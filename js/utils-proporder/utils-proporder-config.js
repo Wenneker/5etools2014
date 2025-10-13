@@ -42,6 +42,7 @@ const PROPORDER_FOUNDRY_GENERIC = [
 	PROPORDER_FOUNDRY_EFFECTS,
 	"flags",
 	"img",
+	"advice",
 
 	new ObjectKey("subEntities", {
 		fnGetOrder: () => PROPORDER_ROOT,
@@ -61,6 +62,7 @@ const PROPORDER_FOUNDRY_GENERIC_FEATURE = [
 	PROPORDER_FOUNDRY_EFFECTS,
 	"flags",
 	"img",
+	"advice",
 
 	"isIgnored",
 	"ignoreSrdActivities",
@@ -71,6 +73,8 @@ const PROPORDER_FOUNDRY_GENERIC_FEATURE = [
 	new ObjectKey("entryData", {
 		fnGetOrder: () => PROPORDER_ENTRY_DATA_OBJECT,
 	}),
+
+	"advancement",
 
 	new ObjectKey("subEntities", {
 		fnGetOrder: () => PROPORDER_ROOT,
@@ -319,6 +323,7 @@ const PROPORDER_FOUNDRY_MONSTER = [
 	PROPORDER_FOUNDRY_EFFECTS,
 	"flags",
 	"img",
+	"advice",
 
 	"migrationVersion",
 ];
@@ -692,6 +697,7 @@ const PROPORDER_FOUNDRY_CLASS = [
 	PROPORDER_FOUNDRY_EFFECTS,
 	"flags",
 	"img",
+	"advice",
 
 	"advancement",
 	"chooseSystem",
@@ -796,6 +802,7 @@ const PROPORDER_FOUNDRY_SUBCLASS = [
 	PROPORDER_FOUNDRY_EFFECTS,
 	"flags",
 	"img",
+	"advice",
 
 	"advancement",
 	"chooseSystem",
@@ -923,6 +930,7 @@ const PROPORDER_FOUNDRY_CLASS_FEATURE = [
 	PROPORDER_FOUNDRY_EFFECTS,
 	"flags",
 	"img",
+	"advice",
 
 	"entries",
 
@@ -930,6 +938,7 @@ const PROPORDER_FOUNDRY_CLASS_FEATURE = [
 		fnGetOrder: () => PROPORDER_ENTRY_DATA_OBJECT,
 	}),
 
+	"advancement",
 	"chooseSystem",
 	"isChooseSystemRenderEntries",
 	"isChooseFlagsRenderEntries",
@@ -959,6 +968,7 @@ const PROPORDER_FOUNDRY_SUBCLASS_FEATURE = [
 	PROPORDER_FOUNDRY_EFFECTS,
 	"flags",
 	"img",
+	"advice",
 
 	"entries",
 
@@ -966,6 +976,7 @@ const PROPORDER_FOUNDRY_SUBCLASS_FEATURE = [
 		fnGetOrder: () => PROPORDER_ENTRY_DATA_OBJECT,
 	}),
 
+	"advancement",
 	"chooseSystem",
 	"isChooseSystemRenderEntries",
 	"isChooseFlagsRenderEntries",
@@ -2043,6 +2054,7 @@ const PROPORDER_FOUNDRY_RACE_FEATURE = [
 	PROPORDER_FOUNDRY_EFFECTS,
 	"flags",
 	"img",
+	"advice",
 
 	"migrationVersion",
 ];
